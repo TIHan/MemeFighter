@@ -23,7 +23,7 @@
     <DefineConstants>DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>x86</PlatformTarget>
-    <ConsolePause>false</ConsolePause>
+    <Externalconsole>true</Externalconsole>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -42,6 +42,9 @@
     <Reference Include="System.Numerics" />
     <Reference Include="FSharp.Core">
       <HintPath>..\lib\FSharp.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="FarseerPhysics">
+      <HintPath>..\lib\FarseerPhysics.dll</HintPath>
     </Reference>
     <Reference Include="Lidgren.Network">
       <HintPath>..\lib\Linux\Lidgren.Network.dll</HintPath>
@@ -64,6 +67,12 @@
   <ItemGroup>
     <None Include="Icon.png" />
     <None Include="Content\nyan.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\nyan_sheet.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\nyan_song.mp3">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
