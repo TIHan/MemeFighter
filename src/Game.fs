@@ -10,14 +10,8 @@ open Microsoft.Xna.Framework.Input
 open Microsoft.Xna.Framework.Audio
 open Microsoft.Xna.Framework.Media
 
-
-type Message<'T> =
-    | Command of 'T
-    | Event of 'T
-
-
-type Process<'State> (initial: 'State, execute) =
-    let mailbox = new MailboxProcessor<Message<_>> (fun agent ->
+type Process<'State, 'Msg> (initial: 'State, execute) =
+    let mailbox = new MailboxProcessor<'Msg> (fun agent ->
         let rec loop (state: 'State)  =
             async {
                 let! msg = agent.Receive ()
@@ -29,30 +23,48 @@ type Process<'State> (initial: 'State, execute) =
         mailbox.Start ()
 
     member this.Send msg =
-        mailbox.Post msg    
+        mailbox.Post msg
+        
+    member this.Query query =
+        mailbox.PostAndReply query
 
 
 module Client =
     type Entity = { Active: bool; Position: Vector2; Texture: Texture2D }
     
-    type EntityProcess = { Process: Process<Entity> }
+    type EntityMessage =
+        | Spawned of Texture2D
+        | GetActive
+
+        
+    type Master = { EntityCount: int; EntityList: Process<Entity, EntityMessage> list }
     
-    type Master = { EntityCount: int; EntityList: EntityProcess list }
+    type MasterMessage =
+        | EntitySpawned of int * Texture2D
+        | GetActiveEntities
     
     let private CreateEntity () =
-        { Active = false; Position = new Vector2 (0.0f, 0.0f); Texture = null }
+        { Active = false; Position = new Vector2 (0.0f, 0.0f); Texture = null }    
     
     let private CreateEntityProcess () =
-        new Process<Entity> (CreateEntity (),(fun state msg -> state))
+        new Process<Entity, EntityMessage> (CreateEntity (),(fun state msg ->
+            match msg with
+            
+            | Spawned texture ->
+                { Active = true; Position = state.Position; Texture = texture }
+                
+            | _ -> state))
     
     let private CreateMaster () =
-        { EntityCount = 0; EntityList = [for i in 1..1024 -> { Process = CreateEntityProcess () }] }
+        { EntityCount = 0; EntityList = [for i in 1..1024 -> CreateEntityProcess ()] }
         
-    let ClientProcess = new Process<Master> (CreateMaster (), (fun state msg ->
+    let Master = new Process<Master, MasterMessage> (CreateMaster (), (fun state msg ->
             match msg with
-            | Command "spawn" ->
-                printfn "Spawning Entity %d ..." state.EntityCount
+            
+            | EntitySpawned (id, texture) ->
+                state.EntityList.[id].Send (Spawned (texture))
                 { EntityCount = state.EntityCount + 1; EntityList = state.EntityList }
+                
             | _ -> state))
 
 
@@ -91,9 +103,10 @@ type Entity (game : Game, graphicsDevice : GraphicsDevice, spriteBatch : SpriteB
         if _runTime = 0.0 then
             _runTime <- milliseconds
             
-        if _runTime + 50.0 < milliseconds then
+        if _runTime + 25.0 < milliseconds then
             _runTime <- milliseconds
-            _position.X <- float32 (Math.Sin (float milliseconds)) * 25.0f
+            _position.X <- _position.X + 1.0f
+            _position.Y <- float32 (Math.Sin (float milliseconds)) * 20.0f
             
         let state = Keyboard.GetState ()
         if state.IsKeyDown (Keys.Up) then
@@ -139,7 +152,7 @@ type MemeFighter () as self =
     /// Draw
     ///
     override this.Draw gameTime =
-        _graphics.GraphicsDevice.Clear Color.CornflowerBlue
+        _graphics.GraphicsDevice.Clear Color.Black
         
         if _add = 1 then
             self.CreateEntity 0.0f 0.0f 900000 0 "nyan"
