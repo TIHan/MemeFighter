@@ -27,48 +27,40 @@ type Process<'State, 'Msg> (initial: 'State, execute) =
         
     member this.Query query =
         mailbox.PostAndReply query
-
-
-module Client =
-    type Entity = { Active: bool; Position: Vector2; Texture: Texture2D }
-    
-    type EntityMessage =
-        | Spawned of Texture2D
-        | GetActive
-
         
-    type Master = { EntityCount: int; EntityList: Process<Entity, EntityMessage> list }
+        
+type Entity = { Active: bool; Position: Vector2; Texture: Texture2D }   
     
-    type MasterMessage =
-        | EntitySpawned of int * Texture2D
-        | GetActiveEntities
-    
-    let private CreateEntity () =
+type Master = { Entities: Entity array }    
+type MasterMessage =
+    | EntitySpawned of int * Texture2D
+    | GetActiveEntities of AsyncReplyChannel<Entity array>
+    | None
+
+
+module Client =    
+    let private CreateEntityState () =
         { Active = false; Position = new Vector2 (0.0f, 0.0f); Texture = null }    
     
-    let private CreateEntityProcess () =
-        new Process<Entity, EntityMessage> (CreateEntity (),(fun state msg ->
-            match msg with
-            
-            | Spawned texture ->
-                { Active = true; Position = state.Position; Texture = texture }
-                
-            | _ -> state))
-    
-    let private CreateMaster () =
-        { EntityCount = 0; EntityList = [for i in 1..1024 -> CreateEntityProcess ()] }
+    let private CreateMasterState () =
+        { Entities = [|for i in 1..1024 -> CreateEntityState ()|] }
         
-    let Master = new Process<Master, MasterMessage> (CreateMaster (), (fun state msg ->
+    let Master = new Process<Master, MasterMessage> (CreateMasterState (), (fun state msg ->
             match msg with
             
-            | EntitySpawned (id, texture) ->
-                state.EntityList.[id].Send (Spawned (texture))
-                { EntityCount = state.EntityCount + 1; EntityList = state.EntityList }
+            | EntitySpawned (id, texture) ->   
+                state.Entities.[id] <- { Active = true; Position = state.Entities.[id].Position; Texture = texture }
+                state
                 
-            | _ -> state))
+            | GetActiveEntities channel ->
+                channel.Reply (Array.filter (fun x -> x.Active = true) state.Entities)
+                state
+                
+            | _ -> state
+            ))
 
 
-type Entity (game : Game, graphicsDevice : GraphicsDevice, spriteBatch : SpriteBatch) =
+(*type Entity (game : Game, graphicsDevice : GraphicsDevice, spriteBatch : SpriteBatch) =
 
     let mutable _game : Game = null
     let mutable _graphicsDevice : GraphicsDevice = null
@@ -112,16 +104,14 @@ type Entity (game : Game, graphicsDevice : GraphicsDevice, spriteBatch : SpriteB
         if state.IsKeyDown (Keys.Up) then
             _position.Y <- _position.Y + 1.0f
 
-        _spriteBatch.Draw (_sprite, _position, Color.White)
+        _spriteBatch.Draw (_sprite, _position, Color.White)*)
         
 
 type MemeFighter () as self =
     inherit Game ()
-    
-    let mutable _entities = new List<Entity> ()
+
     let mutable _spriteBatch : SpriteBatch = null
     let mutable _graphics : GraphicsDeviceManager = null
-    let mutable _add = 1
         
     do
         _graphics <- new GraphicsDeviceManager (self)
@@ -132,6 +122,7 @@ type MemeFighter () as self =
     /// Initialize
     ///
     override this.Initialize () =
+        Client.Master.Send (EntitySpawned (0,  self.Content.Load<Texture2D>("nyan")))
         base.Initialize ()        
     
     ///
@@ -144,9 +135,7 @@ type MemeFighter () as self =
     /// Update 
     ///   
     override this.Update gameTime =
-        match (GamePad.GetState PlayerIndex.One).Buttons.Back = ButtonState.Pressed with
-        | true -> this.Exit ()
-        | _ -> base.Update gameTime    
+        base.Update gameTime    
     
     ///
     /// Draw
@@ -154,28 +143,15 @@ type MemeFighter () as self =
     override this.Draw gameTime =
         _graphics.GraphicsDevice.Clear Color.Black
         
-        if _add = 1 then
-            self.CreateEntity 0.0f 0.0f 900000 0 "nyan"
-            |> ignore
-            _add <- 0
-        
         _spriteBatch.Begin ()
         
-        Seq.iter (fun (x : Entity) -> x.Update gameTime) _entities
-        
+        let entities = Client.Master.Query (fun x -> GetActiveEntities x)
+        Array.iter (fun (x : Entity) -> 
+            _spriteBatch.Draw (x.Texture, x.Position, Color.White)
+        ) entities
+         
         _spriteBatch.End ()
         
+        Console.WriteLine ("FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
         base.Draw gameTime        
-        
-     ///
-     /// Creates an entity.
-     ///
-     member this.CreateEntity (x : float32) y width height content : Entity =
-        let entity = new Entity (self, self.GraphicsDevice, _spriteBatch)
-
-        entity.Move x y;
-        entity.ChangeScale width height;
-        entity.ChangeSprite content;
-        _entities.Add entity;
-        entity
         
