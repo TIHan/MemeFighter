@@ -17,7 +17,7 @@ open FarseerPhysics
 open FarseerPhysics.Collision
 open FarseerPhysics.Controllers
 
-type Entity = { Active: bool; Body: Body }
+type Entity = { Active: bool; Fixture: Fixture }
 
 type ServerMessage =
     | SpawnEntity of int
@@ -29,28 +29,32 @@ module GameServer =
     type Master = { World: World; Entities: Entity array }    
         
     let private CreateEntityState () =
-        { Active = false; Body = null }
+        { Active = false; Fixture = null }
         
     let private CreateMasterState () =
-        { World = new World (new Vector2 (0.0f, 9.82f)); Entities = [|for i in 1..1024 -> CreateEntityState ()|] }
+        { World = new World (new Vector2 (0.0f, 9.82f)); Entities = [|for i in 1..1024 -> CreateEntityState ()|] }        
+        
+    let Init () =
+        ConvertUnits.SetDisplayUnitToSimUnitRatio(16.0f)       
         
     let Master = new Process<Master, ServerMessage> (CreateMasterState (), (fun state msg ->
             match msg with
             
             | SpawnEntity id ->   
-                let body = new Body (state.World)
-                
+                let body = BodyFactory.CreateBody (state.World, new Vector2(0.0f, 0.0f))
                 body.BodyType <- BodyType.Dynamic
-                let fixture = body.CreateFixture (new Shapes.CircleShape (5.0f, 5.0f) )
-                state.World.BodyList.Add body
-                state.Entities.[id] <- { Active = true; Body = body }
+               
+                let shape = new Shapes.CircleShape (0.5f, 0.5f)
+                let fixture = body.CreateFixture (shape, 5)
+                state.Entities.[id] <- { Active = true; Fixture = fixture }
                 state
                 
             | Update timeStep ->
                 state.World.Step timeStep
                 let entities = Array.filter (fun x -> x.Active = true) state.Entities
                 Array.iter (fun (x : Entity) -> 
-                    GameClient.Master.Send (SetEntityPosition (0, x.Body.Position))
+                    let position = new Vector2(ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.X), ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.Y))
+                    GameClient.Master.Send (SetEntityPosition (0, position))
                 ) entities
                 state
                 

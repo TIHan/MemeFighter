@@ -48,8 +48,7 @@ module GameClient =
     let private LerpDuration = (1.0f / 30.0f * 1000.0f)
     
     let private CreateMasterState () =
-        { Entities = [|for i in 1..1024 -> CreateEntityState ()|] }
-        
+        { Entities = [|for i in 1..1024 -> CreateEntityState ()|] }      
         
     let Master = new Process<Master, ClientMessage> (CreateMasterState (), (fun state msg ->
             match msg with
