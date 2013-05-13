@@ -35,17 +35,26 @@ module GameServer =
         { World = new World (new Vector2 (0.0f, 9.82f)); Entities = [|for i in 1..1024 -> CreateEntityState ()|] }        
         
     let Init () =
-        ConvertUnits.SetDisplayUnitToSimUnitRatio(16.0f)       
+        ConvertUnits.SetDisplayUnitToSimUnitRatio(16.0f)
+        
+    let mutable private CanSpawnFloor = true       
         
     let Master = new Process<Master, ServerMessage> (CreateMasterState (), (fun state msg ->
+            match CanSpawnFloor with
+            | true ->
+                let body = BodyFactory.CreateBody (state.World, new Vector2 (0.0f, 20.0f))
+                let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(1000.0f, 4.0f), 0.0f)
+                let fixture = body.CreateFixture shape
+                CanSpawnFloor <- false
+            | _ -> ()
             match msg with
             
             | SpawnEntity id ->   
                 let body = BodyFactory.CreateBody (state.World, new Vector2(0.0f, 0.0f))
                 body.BodyType <- BodyType.Dynamic
-               
                 let shape = new Shapes.CircleShape (0.5f, 0.5f)
                 let fixture = body.CreateFixture (shape, 5)
+                fixture.Restitution <- 1.0f
                 state.Entities.[id] <- { Active = true; Fixture = fixture }
                 state
                 

@@ -74,6 +74,6 @@ type MemeFighter () as this =
         |> ignore
          
         _spriteBatch.End ()
-        
+        Console.WriteLine ("FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
         base.Draw gameTime        
         

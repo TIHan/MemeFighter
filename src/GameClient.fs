@@ -118,12 +118,14 @@ module GameClient =
                     
                 state
                 
-            | Draw (milliseconds, spriteBatch, channel) ->
-                let entities = Array.filter (fun x -> x.Active = true) state.Entities
-                
-                Array.iter (fun x -> 
+            | Draw (milliseconds, spriteBatch, channel) ->                
+                Array.iteri (fun i x ->
+                    match x.Active with
+                    | false -> ()
+                    | _ ->
+                     
                     spriteBatch.Draw (x.Texture, x.PositionLerp, Color.White)
-                ) entities
+                ) state.Entities
                 
                 channel.Reply true
                 state                
