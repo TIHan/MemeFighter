@@ -17,14 +17,19 @@ open FarseerPhysics
 open FarseerPhysics.Collision
 open FarseerPhysics.Controllers
 
-type ClientEntity = {
-    Active: bool;
+type LerpVector2 =
+    { X1: float32;
+    Y1: float32;
+    X2: float32;
+    Y2: float32;
+    Lerp: Vector2;
+    Time: float; }
+
+type ClientEntity =
+    { Active: bool;
     Position: Vector2;
-    PositionPrevious: Vector2;
-    PositionLerp: Vector2;
-    PositionLerpTime: float;
-    Texture: Texture2D
-}
+    PositionLerp: LerpVector2;
+    Texture: Texture2D; }
 
 type ClientMessage =
     | EntitySpawned of int * Texture2D
@@ -38,14 +43,26 @@ module GameClient =
     type Master = { Entities: ClientEntity array }    
             
     let private CreateEntityState () =
-        { Active = false;
-        Position = new Vector2 (0.0f, 0.0f);
-        PositionPrevious = new Vector2 (0.0f, 0.0f);
-        PositionLerp = new Vector2 (0.0f, 0.0f);
-        PositionLerpTime = 0.0;
-        Texture = null }
+        {
+            Active = false;
+            Position = new Vector2 (0.0f, 0.0f);
+            PositionLerp = { X1 = 0.0f; Y1 = 0.0f; X2 = 0.0f; Y2 = 0.0f; Lerp = Vector2 (0.0f, 0.0f); Time = 0.0 }
+            Texture = null;
+        }
         
     let private LerpDuration = (1.0f / 30.0f * 1000.0f)
+    
+    let inline private UpdateEntityLerp entity x y time =
+        { entity with PositionLerp = {
+                                        entity.PositionLerp with
+                                            X1 = match time with | 0.0 -> entity.PositionLerp.X2 | _ -> entity.PositionLerp.X1;
+                                            Y1 = match time with | 0.0 -> entity.PositionLerp.Y2 | _ -> entity.PositionLerp.Y1;
+                                            X2 = match time with | 0.0 -> entity.Position.X | _ -> entity.PositionLerp.X2;
+                                            Y2 = match time with | 0.0 -> entity.Position.Y | _ -> entity.PositionLerp.Y2;
+                                            Lerp = new Vector2 (x, y);
+                                            Time = time
+            }
+        }
     
     let private CreateMasterState () =
         { Entities = [|for i in 1..1024 -> CreateEntityState ()|] }      
@@ -54,77 +71,44 @@ module GameClient =
             match msg with
             
             | EntitySpawned (id, texture) ->
-                let entity = state.Entities.[id]   
-                
-                state.Entities.[id] <- {
-                    Active = true;
-                    Position = entity.Position;
-                    PositionPrevious = entity.PositionPrevious;
-                    PositionLerp = entity.PositionLerp;
-                    PositionLerpTime = entity.PositionLerpTime;
-                    Texture = texture
-                }
-                
+                let entity = state.Entities.[id]                  
+                state.Entities.[id] <- { entity with Active = true; Texture = texture }                
                 state
                 
             | SetEntityPosition (id, position) ->
-                let entity = state.Entities.[id]
-                let mutable previousPosition = entity.PositionPrevious
-                let mutable currentPosition = entity.Position
-                
-                previousPosition.X <- currentPosition.X
-                previousPosition.Y <- currentPosition.Y
-                currentPosition.X <- position.X
-                currentPosition.Y <- position.Y
-                
-                state.Entities.[id] <- {
-                    Active = true;
-                    Position = currentPosition;
-                    PositionPrevious = previousPosition
-                    PositionLerp = entity.PositionLerp;
-                    PositionLerpTime = 0.0
-                    Texture = entity.Texture
-                }
-                
+                let entity = state.Entities.[id]                
+                state.Entities.[id] <- { entity with Position = position }               
                 state
                 
             | Interpolate milliseconds ->             
                 Array.iteri (fun i x ->
-                    match x.Active = true with
+                    match x.Active with
                     | false -> ()
                     | _ ->       
                            
-                    let amount = match x.PositionLerpTime with
+                    let amount = match x.PositionLerp.Time with
                                     | 0.0 -> 0.0f
                                     | (m) -> MathHelper.Clamp (float32 (milliseconds - m) / LerpDuration, 0.0f, 1.0f)
                     
-                    let lerpX = MathHelper.Lerp (x.PositionPrevious.X, x.Position.X, amount)
-                    let lerpY = MathHelper.Lerp (x.PositionPrevious.Y, x.Position.Y, amount)
-                    let mutable currentPositionLerp = x.PositionLerp
+                    let lerpX = MathHelper.Lerp (x.PositionLerp.X1, x.PositionLerp.X2, amount)
+                    let lerpY = MathHelper.Lerp (x.PositionLerp.Y1, x.PositionLerp.Y2, amount)
+                    let time = match (x.PositionLerp.Time, amount) with
+                                | (0.0, _) -> milliseconds 
+                                | (m, 1.0f) -> 0.0
+                                | (m, _) -> m                                        
 
-                    currentPositionLerp.X <- lerpX
-                    currentPositionLerp.Y <- lerpY
-                    
-                    state.Entities.[i] <- {
-                        Active = x.Active;
-                        Position = x.Position;
-                        PositionPrevious = x.PositionPrevious;
-                        PositionLerp = currentPositionLerp;
-                        PositionLerpTime = match x.PositionLerpTime with | 0.0 -> milliseconds | (m) -> m;
-                        Texture = x.Texture;
-                    }
-                    
+                    state.Entities.[i] <- UpdateEntityLerp x lerpX lerpY time                
                 ) state.Entities
                     
                 state
                 
             | Draw (milliseconds, spriteBatch, channel) ->                
-                Array.iteri (fun i x ->
+                Array.iter (fun x ->
                     match x.Active with
                     | false -> ()
                     | _ ->
                      
-                    spriteBatch.Draw (x.Texture, x.PositionLerp, Color.White)
+                    spriteBatch.Draw (x.Texture, x.PositionLerp.Lerp, Color.White)
                 ) state.Entities
                 
                 channel.Reply true
