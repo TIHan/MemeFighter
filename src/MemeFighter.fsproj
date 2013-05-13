@@ -11,8 +11,10 @@
     <AssemblyName>MemeFighterFSharp</AssemblyName>
     <BuildOrder>
       <BuildOrder>
+        <String>Process.fs</String>
+        <String>GameClient.fs</String>
+        <String>GameServer.fs</String>
         <String>Game.fs</String>
-        <String>Physics.fs</String>
         <String>Program.fs</String>
       </BuildOrder>
     </BuildOrder>
@@ -61,6 +63,9 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
     <Compile Include="Game.fs" />
+    <Compile Include="GameServer.fs" />
+    <Compile Include="Process.fs" />
+    <Compile Include="GameClient.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Icon.png" />
@@ -87,9 +92,9 @@
     <Folder Include="Content\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\lib\Farseer\Farseer.csproj">
-      <Project>{FE94DAE8-93E2-4773-8F56-25ED70D39D61}</Project>
-      <Name>Farseer</Name>
+    <ProjectReference Include="..\lib\Farseer Physics\Farseer Physics.csproj">
+      <Project>{A4610E4C-DD34-428B-BABB-779CA0B5993A}</Project>
+      <Name>Farseer Physics</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

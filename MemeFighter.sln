@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{4925A630-B079-445d-BCD4-3A9C94FE9307}") = "MemeFighter", "src\MemeFighter.fsproj", "{2270AE75-6F00-4305-8982-DE292958C31C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farseer", "lib\Farseer\Farseer.csproj", "{FE94DAE8-93E2-4773-8F56-25ED70D39D61}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farseer Physics", "lib\Farseer Physics\Farseer Physics.csproj", "{A4610E4C-DD34-428B-BABB-779CA0B5993A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,10 @@ Global
 		{2270AE75-6F00-4305-8982-DE292958C31C}.Debug|x86.Build.0 = Debug|x86
 		{2270AE75-6F00-4305-8982-DE292958C31C}.Release|x86.ActiveCfg = Release|x86
 		{2270AE75-6F00-4305-8982-DE292958C31C}.Release|x86.Build.0 = Release|x86
-		{FE94DAE8-93E2-4773-8F56-25ED70D39D61}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{FE94DAE8-93E2-4773-8F56-25ED70D39D61}.Debug|x86.Build.0 = Debug|Any CPU
-		{FE94DAE8-93E2-4773-8F56-25ED70D39D61}.Release|x86.ActiveCfg = Release|Any CPU
-		{FE94DAE8-93E2-4773-8F56-25ED70D39D61}.Release|x86.Build.0 = Release|Any CPU
+		{A4610E4C-DD34-428B-BABB-779CA0B5993A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A4610E4C-DD34-428B-BABB-779CA0B5993A}.Debug|x86.Build.0 = Debug|Any CPU
+		{A4610E4C-DD34-428B-BABB-779CA0B5993A}.Release|x86.ActiveCfg = Release|Any CPU
+		{A4610E4C-DD34-428B-BABB-779CA0B5993A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = src\MemeFighter.fsproj
