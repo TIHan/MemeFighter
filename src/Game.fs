@@ -3,12 +3,19 @@ namespace MemeFighter
 open System
 open System.Linq
 open System.Collections.Generic
+open System.Diagnostics
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Storage
 open Microsoft.Xna.Framework.Input
 open Microsoft.Xna.Framework.Audio
 open Microsoft.Xna.Framework.Media
+open FarseerPhysics.Common
+open FarseerPhysics.Factories
+open FarseerPhysics.Dynamics
+open FarseerPhysics
+open FarseerPhysics.Collision
+open FarseerPhysics.Controllers
 
 type Process<'State, 'Msg> (initial: 'State, execute) =
     let mailbox = new MailboxProcessor<'Msg> (fun agent ->
@@ -29,27 +36,33 @@ type Process<'State, 'Msg> (initial: 'State, execute) =
         mailbox.PostAndReply query
         
         
-type Entity = { Active: bool; Position: Vector2; Texture: Texture2D }   
-    
-type Master = { Entities: Entity array }    
-type MasterMessage =
+type ClientEntity = { Active: bool; Position: Vector2; Texture: Texture2D }
+
+type ClientMessage =
     | EntitySpawned of int * Texture2D
-    | GetActiveEntities of AsyncReplyChannel<Entity array>
-    | None
+    | SetEntityPosition of int * Vector2
+    | GetActiveEntities of AsyncReplyChannel<ClientEntity array>
+    | None   
 
+module GameClient =
 
-module Client =    
+    type Master = { Entities: ClientEntity array }    
+            
     let private CreateEntityState () =
         { Active = false; Position = new Vector2 (0.0f, 0.0f); Texture = null }    
     
     let private CreateMasterState () =
         { Entities = [|for i in 1..1024 -> CreateEntityState ()|] }
         
-    let Master = new Process<Master, MasterMessage> (CreateMasterState (), (fun state msg ->
+    let Master = new Process<Master, ClientMessage> (CreateMasterState (), (fun state msg ->
             match msg with
             
             | EntitySpawned (id, texture) ->   
                 state.Entities.[id] <- { Active = true; Position = state.Entities.[id].Position; Texture = texture }
+                state
+                
+            | SetEntityPosition (id, position) ->
+                state.Entities.[id] <- { Active = true; Position = position; Texture = state.Entities.[id].Texture }
                 state
                 
             | GetActiveEntities channel ->
@@ -59,6 +72,47 @@ module Client =
             | _ -> state
             ))
 
+    
+type Entity = { Active: bool; Body: Body }
+
+type ServerMessage =
+    | SpawnEntity of int
+    | GetActiveEntities of AsyncReplyChannel<Entity array>
+    | UpdatePhysics
+    | None                                 
+            
+module GameServer =
+    
+    type Master = { World: World; Entities: Entity array }    
+        
+    let private CreateEntityState () =
+        { Active = false; Body = null }
+        
+    let private CreateMasterState () =
+        { World = new World (new Vector2 (0.0f, 9.82f)); Entities = [|for i in 1..1024 -> CreateEntityState ()|] }
+        
+    let Master = new Process<Master, ServerMessage> (CreateMasterState (), (fun state msg ->
+            match msg with
+            
+            | SpawnEntity id ->   
+                let body = new Body (state.World)
+                
+                body.BodyType <- BodyType.Dynamic
+                let fixture = body.CreateFixture (new Shapes.CircleShape (5.0f, 5.0f) )
+                state.World.BodyList.Add body
+                state.Entities.[id] <- { Active = true; Body = body }
+                state
+                
+            | GetActiveEntities channel ->
+                channel.Reply (Array.filter (fun x -> x.Active = true) state.Entities)
+                state
+                
+            | UpdatePhysics ->
+                state.World.Step (0.033333f)
+                state
+                
+            | _ -> state
+            ))    
 
 (*type Entity (game : Game, graphicsDevice : GraphicsDevice, spriteBatch : SpriteBatch) =
 
@@ -122,7 +176,8 @@ type MemeFighter () as self =
     /// Initialize
     ///
     override this.Initialize () =
-        Client.Master.Send (EntitySpawned (0,  self.Content.Load<Texture2D>("nyan")))
+        GameClient.Master.Send (EntitySpawned (0,  self.Content.Load<Texture2D>("nyan")))
+        GameServer.Master.Send (SpawnEntity (0))
         base.Initialize ()        
     
     ///
@@ -135,6 +190,13 @@ type MemeFighter () as self =
     /// Update 
     ///   
     override this.Update gameTime =
+        let servers = GameServer.Master.Query (fun x -> ServerMessage.GetActiveEntities x)
+        Array.iter (fun (x : Entity) -> 
+            GameClient.Master.Send (SetEntityPosition (0, x.Body.Position))
+        ) servers
+                 
+        GameServer.Master.Send (UpdatePhysics)
+        
         base.Update gameTime    
     
     ///
@@ -145,13 +207,13 @@ type MemeFighter () as self =
         
         _spriteBatch.Begin ()
         
-        let entities = Client.Master.Query (fun x -> GetActiveEntities x)
-        Array.iter (fun (x : Entity) -> 
+        let entities = GameClient.Master.Query (fun x -> ClientMessage.GetActiveEntities x)
+        Array.iter (fun (x : ClientEntity) -> 
             _spriteBatch.Draw (x.Texture, x.Position, Color.White)
         ) entities
          
         _spriteBatch.End ()
         
-        Console.WriteLine ("FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
+        //Console.WriteLine ("FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
         base.Draw gameTime        
         

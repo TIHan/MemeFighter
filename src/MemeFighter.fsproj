@@ -12,6 +12,7 @@
     <BuildOrder>
       <BuildOrder>
         <String>Game.fs</String>
+        <String>Physics.fs</String>
         <String>Program.fs</String>
       </BuildOrder>
     </BuildOrder>
@@ -42,9 +43,6 @@
     <Reference Include="System.Numerics" />
     <Reference Include="FSharp.Core">
       <HintPath>..\lib\FSharp.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="FarseerPhysics">
-      <HintPath>..\lib\FarseerPhysics.dll</HintPath>
     </Reference>
     <Reference Include="Lidgren.Network">
       <HintPath>..\lib\Linux\Lidgren.Network.dll</HintPath>
@@ -87,5 +85,11 @@
   </ProjectExtensions>
   <ItemGroup>
     <Folder Include="Content\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\lib\Farseer\Farseer.csproj">
+      <Project>{FE94DAE8-93E2-4773-8F56-25ED70D39D61}</Project>
+      <Name>Farseer</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>
