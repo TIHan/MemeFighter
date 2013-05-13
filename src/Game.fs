@@ -23,7 +23,7 @@ type MemeFighter () as this =
 
     let mutable _spriteBatch : SpriteBatch = null
     let mutable _graphics : GraphicsDeviceManager = null
-    let mutable _updateCount = 0
+    let mutable _updateCount = 1
         
     do
         _graphics <- new GraphicsDeviceManager (this)
@@ -52,7 +52,7 @@ type MemeFighter () as this =
     override this.Update gameTime =         
         match _updateCount >= 1 with
         | true ->
-            GameServer.Master.Send (Update (float32 gameTime.ElapsedGameTime.TotalSeconds * 2.0f))
+            GameServer.Master.Send (Update (1.0f / 30.0f))
             _updateCount <- 0
         | _ ->
             _updateCount <- _updateCount + 1
