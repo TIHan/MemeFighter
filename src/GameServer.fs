@@ -55,7 +55,7 @@ module GameServer =
         let body = BodyFactory.CreateBody (world, new Vector2(x, y))
         let width = ConvertUnits.ToSimUnits(16)
         let height = ConvertUnits.ToSimUnits(16)
-        let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(width, height), 1.0f)
+        let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(width, height), 0.0f)
         let fixture = body.CreateFixture shape
         
         fixture.Restitution <- 1.0f

@@ -12,7 +12,7 @@ namespace FarseerPhysics
 
         public static void SetDisplayUnitToSimUnitRatio(float displayUnitsPerSimUnit)
         {
-            _displayUnitsToSimUnitsRatio = displayUnitsPerSimUnit;
+            _displayUnitsToSimUnitsRatio = displayUnitsPerSimUnit / 2f;
             _simUnitsToDisplayUnitsRatio = 1 / displayUnitsPerSimUnit;
         }
 

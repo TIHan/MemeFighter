@@ -70,10 +70,10 @@ module GameClient =
                 { Entities = Set.add (SpawnEntity id x y texture) state.Entities }              
                 
             | SetEntityPosition (id, position) ->
-                let entity = state.Entities.FirstOrDefault (fun x -> x.Id = id)
+                let entity = Set.filter (fun x -> x.Id = id) state.Entities |> Set.minElement
                 match entity = Unchecked.defaultof<_> with
                 | false -> { Entities = Set.remove entity state.Entities |> Set.add (UpdateEntityPosition entity position) }   
-                | _ -> state           
+                | _ -> state         
                 
             | Draw (milliseconds, spriteBatch, channel) ->
                 Set.iter (fun x ->

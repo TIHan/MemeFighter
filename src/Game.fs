@@ -40,11 +40,9 @@ type MemeFighter () as this =
         let texture = new Texture2D (_graphics.GraphicsDevice, 16, 16)
 
             
-        for i = 0 to 0 do
-            GameServer.Send (SpawnEntity (texture, 1.0f, 1.0f))
+        for i = 0 to 100 do
+            GameServer.Send (SpawnEntity (texture, float32 i, 0.0f))
             
-        for i = 0 to 0 do
-            GameServer.Send (SpawnEntity (texture, 0.0f, 0.0f))
         base.Initialize ()        
     
     ///
