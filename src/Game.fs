@@ -52,7 +52,8 @@ type MemeFighter () as this =
     override this.Update gameTime =         
         match _updateTime + (1.0 / 30.0 * 1000.0) - 0.1 <= gameTime.TotalGameTime.TotalMilliseconds with
         | true ->
-            GameServer.Master.Send (Update (1.0f / 30.0f))
+            GameServer.Master.SendAndReply (fun x -> Update ((1.0f / 30.0f), x))
+            |> ignore
             _updateTime <- gameTime.TotalGameTime.TotalMilliseconds
         | _ -> ()
         base.Update gameTime    
@@ -64,8 +65,6 @@ type MemeFighter () as this =
         _graphics.GraphicsDevice.Clear Color.Black
         
         let milliseconds = gameTime.TotalGameTime.TotalMilliseconds
-        
-        GameClient.Master.Send (Interpolate milliseconds)
         
         _spriteBatch.Begin ()
         
