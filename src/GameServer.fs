@@ -40,7 +40,7 @@ type Entity =
               
 
 type ServerMessage =
-    | SpawnEntity of Texture2D
+    | SpawnEntity of Texture2D * float32 * float32
     | Update of float32
     | None
     
@@ -51,8 +51,8 @@ module GameServer =
     ///
     ///
     ///
-    let inline private CreateDynamicFixture world =
-        let body = BodyFactory.CreateBody (world, new Vector2(0.0f, 0.0f))
+    let inline private CreateDynamicFixture world x y =
+        let body = BodyFactory.CreateBody (world, new Vector2(x, y))
         let width = ConvertUnits.ToSimUnits(16)
         let height = ConvertUnits.ToSimUnits(16)
         let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(width, height), 1.0f)
@@ -65,9 +65,9 @@ module GameServer =
     ///
     ///
     ///
-    let inline private SpawnEntity state =
+    let inline private SpawnEntity state x y =
         let id = state.NextEntityId
-        let fixture = CreateDynamicFixture state.World
+        let fixture = CreateDynamicFixture state.World x y
         
         { Id = id; Fixture = fixture }
 
@@ -96,8 +96,8 @@ module GameServer =
             
             match msg with
             
-            | SpawnEntity content ->   
-                let entity = SpawnEntity state
+            | SpawnEntity (content, x, y) ->   
+                let entity = SpawnEntity state x y
                 GameClient.Send (EntitySpawned (entity.Id, content))
                 { state with Entities = Set.add entity state.Entities; NextEntityId = state.NextEntityId + 1 }
                 
