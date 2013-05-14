@@ -17,25 +17,72 @@ open FarseerPhysics
 open FarseerPhysics.Collision
 open FarseerPhysics.Controllers
 
-type Entity = { Active: bool; Fixture: Fixture }
+[<CustomEquality>]
+[<CustomComparison>]
+type Entity = 
+    {
+        Id: int;
+        Fixture: Fixture
+    }
+    
+    override this.Equals x =
+        match x with
+        | :? Entity as entity -> this.Id = entity.Id
+        | _ -> false
+        
+    override this.GetHashCode () = hash this.Id
+    
+    interface IComparable with
+        member this.CompareTo x = 
+            match x with
+            | :? Entity as entity -> compare this.Id entity.Id
+            | _ -> invalidArg "x" "Invalid comparison"
+              
 
 type ServerMessage =
     | SpawnEntity of Texture2D
     | Update of float32
     | None
     
-type ServerState = { World: World; Entities: Entity array; NextEntityId: int }                                   
+type ServerState = { World: World; Entities: Set<Entity>; NextEntityId: int }                                   
             
-module GameServer =        
-    let inline private CreateEntityState () =
-        { Active = false; Fixture = null }
+module GameServer = 
+
+    ///
+    ///
+    ///
+    let inline private CreateDynamicFixture world =
+        let body = BodyFactory.CreateBody (world, new Vector2(0.0f, 0.0f))
+        let shape = new Shapes.CircleShape (0.5f, 0.5f)
+        let fixture = body.CreateFixture (shape, 5)
         
+        fixture.Restitution <- 1.0f
+        fixture.Body.BodyType <- BodyType.Dynamic
+        fixture        
+
+    ///
+    ///
+    ///
+    let inline private SpawnEntity state =
+        let id = state.NextEntityId
+        let fixture = CreateDynamicFixture state.World
+        
+        { Id = id; Fixture = fixture }
+
+    ///
+    ///
+    ///        
     let inline private CreateServerState () =
-        let entities = [|for i in 1..1024 -> CreateEntityState ()|]
-        { World = new World (new Vector2 (0.0f, 9.82f)); Entities = entities; NextEntityId = 1 }        
-        
+        { World = new World (new Vector2 (0.0f, 9.82f)); Entities = Set.empty; NextEntityId = 1 }        
+
+    ///
+    ///
+    ///        
     let mutable private CanSpawnFloor = true       
-        
+       
+    ///
+    ///
+    /// 
     let private ServerState = new Process<ServerState, ServerMessage> (CreateServerState (), (fun state msg ->
             match CanSpawnFloor with
             | true ->
@@ -44,37 +91,42 @@ module GameServer =
                 let fixture = body.CreateFixture shape
                 CanSpawnFloor <- false
             | _ -> ()
+            
             match msg with
             
             | SpawnEntity content ->   
-                let id = state.NextEntityId
-                let body = BodyFactory.CreateBody (state.World, new Vector2(0.0f, 0.0f))
-                body.BodyType <- BodyType.Dynamic
-                let shape = new Shapes.CircleShape (0.5f, 0.5f)
-                let fixture = body.CreateFixture (shape, 5)
-                fixture.Restitution <- 1.0f
-                state.Entities.[1] <- { Active = true; Fixture = fixture }
-                GameClient.Send (EntitySpawned (id, content))
-                state
+                let entity = SpawnEntity state
+                GameClient.Send (EntitySpawned (entity.Id, content))
+                { state with Entities = Set.add entity state.Entities; NextEntityId = state.NextEntityId + 1 }
                 
             | Update timeStep ->
                 state.World.Step timeStep
-                let entities = Array.filter (fun x -> x.Active = true) state.Entities
-                Array.iter (fun (x : Entity) -> 
+
+                Set.iter (fun x -> 
                     let position = new Vector2(ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.X), ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.Y))
-                    GameClient.Send (SetEntityPosition (1, position))
-                ) entities
+                    GameClient.Send (SetEntityPosition (x.Id, position))
+                ) state.Entities
+                
                 state
                 
             | _ -> state
             ))    
 
+    ///
+    ///
+    ///
     let Init () =
         ConvertUnits.SetDisplayUnitToSimUnitRatio(16.0f)
         ServerState.Start ()
-        
+
+    ///
+    ///
+    ///                
     let Send msg =
         ServerState.Send msg
-        
+       
+    ///
+    ///
+    ///         
     let SendAndAwait<'Reply> msg : 'Reply =
         ServerState.SendAndAwait msg
