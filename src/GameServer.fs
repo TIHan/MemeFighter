@@ -22,24 +22,20 @@ type Entity = { Active: bool; Fixture: Fixture }
 type ServerMessage =
     | SpawnEntity of int
     | Update of float32
-    | None                                 
-            
-module GameServer =
+    | None
     
-    type Master = { World: World; Entities: Entity array }    
-        
-    let private CreateEntityState () =
+type ServerState = { World: World; Entities: Entity array }                                   
+            
+module GameServer =        
+    let inline private CreateEntityState () =
         { Active = false; Fixture = null }
         
-    let private CreateMasterState () =
+    let inline private CreateServerState () =
         { World = new World (new Vector2 (0.0f, 9.82f)); Entities = [|for i in 1..1024 -> CreateEntityState ()|] }        
-        
-    let Init () =
-        ConvertUnits.SetDisplayUnitToSimUnitRatio(16.0f)
         
     let mutable private CanSpawnFloor = true       
         
-    let Master = new Process<Master, ServerMessage> (CreateMasterState (), (fun state msg ->
+    let private ServerState = new Process<ServerState, ServerMessage> (CreateServerState (), (fun state msg ->
             match CanSpawnFloor with
             | true ->
                 let body = BodyFactory.CreateBody (state.World, new Vector2 (0.0f, 20.0f))
@@ -69,3 +65,13 @@ module GameServer =
                 
             | _ -> state
             ))    
+
+    let Init () =
+        ConvertUnits.SetDisplayUnitToSimUnitRatio(16.0f)
+        ServerState.Start ()
+        
+    let Send msg =
+        ServerState.Send msg
+        
+    let SendAndAwait<'Reply> msg : 'Reply =
+        ServerState.SendAndAwait msg

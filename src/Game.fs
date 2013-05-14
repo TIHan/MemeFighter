@@ -36,8 +36,9 @@ type MemeFighter () as this =
     ///
     override this.Initialize () =
         GameServer.Init ()
+        GameClient.Init ()
         GameClient.Send (EntitySpawned (0,  this.Content.Load<Texture2D>("nyan")))
-        GameServer.Master.Send (SpawnEntity (0))
+        GameServer.Send (SpawnEntity (0))
         base.Initialize ()        
     
     ///
@@ -54,7 +55,7 @@ type MemeFighter () as this =
 
         match _updateTime + LogicCheckRate <= milliseconds with
         | true ->
-            GameServer.Master.Send (Update LogicUpdateRate)
+            GameServer.Send (Update LogicUpdateRate)
             _updateTime <- milliseconds
         | _ -> ()
         

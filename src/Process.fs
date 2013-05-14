@@ -9,7 +9,7 @@ type Process<'State, 'Msg> (initial: 'State, execute) =
             }
         loop initial)
         
-    do
+    member this.Start () =
         mailbox.Start ()
 
     member this.Send msg =

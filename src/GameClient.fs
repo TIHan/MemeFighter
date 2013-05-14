@@ -38,8 +38,7 @@ type ClientMessage =
     
 type ClientState = { Entities: ClientEntity array }  
 
-module GameClient =  
-            
+module GameClient =              
     let private CreateEntityState () =
         { Active = false;
         Position = new Vector2 (0.0f, 0.0f);
@@ -81,6 +80,9 @@ module GameClient =
                 
             | _ -> state
             ))
+            
+    let Init () =
+        ClientState.Start ()
             
     let Send msg =
         ClientState.Send msg
