@@ -3,8 +3,8 @@ module MemeFighter.Main
 open System
 
 [<EntryPoint>]
-let main args = 
-    (new MemeFighter ()).Run ()
-    //Console.ReadLine () |> ignore
+let main args =
+    let game = new MemeFighter ()
+    game.Run ()
     0
 

@@ -15,5 +15,5 @@ type Process<'State, 'Msg> (initial: 'State, execute) =
     member this.Send msg =
         mailbox.Post msg
     
-    member this.SendAndReply msg =
+    member this.SendAndAwait<'Reply> msg : 'Reply =
         mailbox.PostAndReply msg

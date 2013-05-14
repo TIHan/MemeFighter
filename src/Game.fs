@@ -10,12 +10,6 @@ open Microsoft.Xna.Framework.Storage
 open Microsoft.Xna.Framework.Input
 open Microsoft.Xna.Framework.Audio
 open Microsoft.Xna.Framework.Media
-open FarseerPhysics.Common
-open FarseerPhysics.Factories
-open FarseerPhysics.Dynamics
-open FarseerPhysics
-open FarseerPhysics.Collision
-open FarseerPhysics.Controllers
         
 
 type MemeFighter () as this =
@@ -49,14 +43,20 @@ type MemeFighter () as this =
     ///
     /// Update 
     ///   
-    override this.Update gameTime =         
+    override this.Update gameTime =
+        let keyboardState = Keyboard.GetState () 
+
         match _updateTime + (1.0 / 30.0 * 1000.0) - 0.1 <= gameTime.TotalGameTime.TotalMilliseconds with
         | true ->
-            GameServer.Master.SendAndReply (fun x -> Update ((1.0f / 30.0f), x))
+            GameServer.Master.Send (Update (1.0f / 30.0f))
             |> ignore
             _updateTime <- gameTime.TotalGameTime.TotalMilliseconds
         | _ -> ()
         base.Update gameTime    
+        
+        // Placeholder for exiting.
+        if keyboardState.IsKeyDown Keys.Escape then
+            this.Exit ()
     
     ///
     /// Draw
@@ -68,10 +68,9 @@ type MemeFighter () as this =
         
         _spriteBatch.Begin ()
         
-        GameClient.Master.SendAndReply (fun x -> Draw (milliseconds, _spriteBatch, x))
-        |> ignore
+        GameClient.Master.SendAndAwait<unit> (fun x -> Draw (milliseconds, _spriteBatch, x))
          
         _spriteBatch.End ()
-        Console.WriteLine ("FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
+        //Console.WriteLine ("FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
         base.Draw gameTime        
         

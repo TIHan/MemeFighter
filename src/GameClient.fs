@@ -33,7 +33,7 @@ type ClientEntity =
 type ClientMessage =
     | EntitySpawned of int * Texture2D
     | SetEntityPosition of int * Vector2
-    | Draw of float * SpriteBatch * AsyncReplyChannel<bool>
+    | Draw of float * SpriteBatch * AsyncReplyChannel<unit>
     | None   
 
 module GameClient =
@@ -80,7 +80,7 @@ module GameClient =
                     spriteBatch.Draw (x.Texture, x.Position, Color.White)
                 ) state.Entities
                 
-                channel.Reply true
+                channel.Reply ()
                 state                
                 
             | _ -> state

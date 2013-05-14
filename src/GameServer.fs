@@ -21,7 +21,7 @@ type Entity = { Active: bool; Fixture: Fixture }
 
 type ServerMessage =
     | SpawnEntity of int
-    | Update of float32 * AsyncReplyChannel<bool>
+    | Update of float32
     | None                                 
             
 module GameServer =
@@ -58,14 +58,13 @@ module GameServer =
                 state.Entities.[id] <- { Active = true; Fixture = fixture }
                 state
                 
-            | Update (timeStep, channel) ->
+            | Update timeStep ->
                 state.World.Step timeStep
                 let entities = Array.filter (fun x -> x.Active = true) state.Entities
                 Array.iter (fun (x : Entity) -> 
                     let position = new Vector2(ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.X), ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.Y))
                     GameClient.Master.Send (SetEntityPosition (0, position))
                 ) entities
-                channel.Reply true
                 state
                 
             | _ -> state
