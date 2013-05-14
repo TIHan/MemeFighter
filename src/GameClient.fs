@@ -42,7 +42,7 @@ type ClientEntity =
     
 
 type ClientMessage =
-    | EntitySpawned of int * Texture2D
+    | EntitySpawned of int * Texture2D * float32 * float32
     | SetEntityPosition of int * Vector2
     | Draw of float * SpriteBatch * AsyncReplyChannel<unit>
     | None   
@@ -66,8 +66,8 @@ module GameClient =
     let private ClientState = new Process<ClientState, ClientMessage> (CreateClientState (), (fun state msg ->
             match msg with
             
-            | EntitySpawned (id, texture) ->              
-                { Entities = Set.add (SpawnEntity id 0.0f 0.0f texture) state.Entities }              
+            | EntitySpawned (id, texture, x, y) ->              
+                { Entities = Set.add (SpawnEntity id x y texture) state.Entities }              
                 
             | SetEntityPosition (id, position) ->
                 let entity = state.Entities.FirstOrDefault (fun x -> x.Id = id)
@@ -87,6 +87,7 @@ module GameClient =
             ))
             
     let Init () =
+        ConvertUnits.SetDisplayUnitToSimUnitRatio(16.0f)
         ClientState.Start ()
             
     let Send msg =

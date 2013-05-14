@@ -98,7 +98,7 @@ module GameServer =
             
             | SpawnEntity (content, x, y) ->   
                 let entity = SpawnEntity state x y
-                GameClient.Send (EntitySpawned (entity.Id, content))
+                GameClient.Send (EntitySpawned (entity.Id, content, x, y))
                 { state with Entities = Set.add entity state.Entities; NextEntityId = state.NextEntityId + 1 }
                 
             | Update timeStep ->
@@ -118,7 +118,6 @@ module GameServer =
     ///
     ///
     let Init () =
-        ConvertUnits.SetDisplayUnitToSimUnitRatio(16.0f)
         ServerState.Start ()
 
     ///
