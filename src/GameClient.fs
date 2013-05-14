@@ -43,6 +43,7 @@ type ClientEntity =
 
 type ClientMessage =
     | EntitySpawned of int * Texture2D * float32 * float32
+    | EntityPositionsUpdated of (int * int * int) list
     | SetEntityPosition of int * Vector2
     | Draw of float * SpriteBatch * AsyncReplyChannel<unit>
     | None   
@@ -61,13 +62,13 @@ module GameClient =
         { entity with Position = position; }
     
     let inline private CreateClientState () =
-        { Entities = Set.empty }              
+        { Entities = Set.empty }                               
         
     let private ClientState = new Process<ClientState, ClientMessage> (CreateClientState (), (fun state msg ->
             match msg with
             
             | EntitySpawned (id, texture, x, y) ->              
-                { Entities = Set.add (SpawnEntity id x y texture) state.Entities }              
+                { Entities = Set.add (SpawnEntity id x y texture) state.Entities }
                 
             | SetEntityPosition (id, position) ->
                 let entity = Set.filter (fun x -> x.Id = id) state.Entities |> Set.minElement

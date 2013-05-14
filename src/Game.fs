@@ -40,7 +40,7 @@ type MemeFighter () as this =
         let texture = new Texture2D (_graphics.GraphicsDevice, 16, 16)
 
             
-        for i = 0 to 100 do
+        for i = 0 to 255 do
             GameServer.Send (SpawnEntity (texture, float32 i, 0.0f))
             
         base.Initialize ()        
@@ -84,6 +84,6 @@ type MemeFighter () as this =
         GameClient.SendAndAwait<unit> (fun x -> Draw (milliseconds, _spriteBatch, x))         
         _spriteBatch.End ()
 
-        Console.WriteLine ("FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
+        Console.WriteLine ("Render FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
         base.Draw gameTime        
         

@@ -58,7 +58,7 @@ module GameServer =
         let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(width, height), 0.0f)
         let fixture = body.CreateFixture shape
         
-        fixture.Restitution <- 1.0f
+        fixture.Restitution <- 0.90f
         fixture.Body.BodyType <- BodyType.Dynamic
         fixture        
 
@@ -80,7 +80,7 @@ module GameServer =
     ///
     ///
     ///        
-    let mutable private CanSpawnFloor = true       
+    let mutable private CanSpawnFloor = true     
        
     ///
     ///
@@ -103,12 +103,10 @@ module GameServer =
                 
             | Update timeStep ->
                 state.World.Step timeStep
-
                 Set.iter (fun x -> 
                     let position = new Vector2(ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.X), ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.Y))
                     GameClient.Send (SetEntityPosition (x.Id, position))
                 ) state.Entities
-                
                 state
                 
             | _ -> state
