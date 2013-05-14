@@ -15,14 +15,20 @@ open Microsoft.Xna.Framework.Media
 type MemeFighter () as this =
     inherit Game ()
 
+    let DrawRate = 60.0 // FPS
+    let LogicRate = 20.0 // FPS
+    let LogicCheckRate = (1.0 / LogicRate * 1000.0) - 0.1
+    let LogicUpdateRate = float32 (1.0 / LogicRate)
+    
     let mutable _spriteBatch : SpriteBatch = null
     let mutable _graphics : GraphicsDeviceManager = null
-    let mutable _updateTime: float = 0.0
+    let mutable _updateTime = 0.0
         
     do
         _graphics <- new GraphicsDeviceManager (this)
-        this.Content.RootDirectory <- "Content"
         _graphics.IsFullScreen <- false
+        this.TargetElapsedTime <- TimeSpan.FromSeconds (1.0 / DrawRate)
+        this.Content.RootDirectory <- "Content"
        
     
     ///
@@ -46,9 +52,9 @@ type MemeFighter () as this =
     override this.Update gameTime =
         let keyboardState = Keyboard.GetState () 
 
-        match _updateTime + (1.0 / 30.0 * 1000.0) - 0.1 <= gameTime.TotalGameTime.TotalMilliseconds with
+        match _updateTime + LogicCheckRate <= gameTime.TotalGameTime.TotalMilliseconds with
         | true ->
-            GameServer.Master.Send (Update (1.0f / 30.0f))
+            GameServer.Master.Send (Update LogicUpdateRate)
             |> ignore
             _updateTime <- gameTime.TotalGameTime.TotalMilliseconds
         | _ -> ()
