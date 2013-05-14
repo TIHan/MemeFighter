@@ -29,14 +29,14 @@ type MemeFighter () as this =
         _graphics.IsFullScreen <- false
         this.TargetElapsedTime <- TimeSpan.FromSeconds (1.0 / DrawRate)
         this.Content.RootDirectory <- "Content"
-       
+  
     
     ///
     /// Initialize
     ///
     override this.Initialize () =
         GameServer.Init ()
-        GameClient.Master.Send (EntitySpawned (0,  this.Content.Load<Texture2D>("nyan")))
+        GameClient.Send (EntitySpawned (0,  this.Content.Load<Texture2D>("nyan")))
         GameServer.Master.Send (SpawnEntity (0))
         base.Initialize ()        
     
@@ -49,18 +49,19 @@ type MemeFighter () as this =
     ///
     /// Update 
     ///   
-    override this.Update gameTime =
-        let keyboardState = Keyboard.GetState () 
+    override this.Update gameTime =       
+        let milliseconds = gameTime.TotalGameTime.TotalMilliseconds
 
-        match _updateTime + LogicCheckRate <= gameTime.TotalGameTime.TotalMilliseconds with
+        match _updateTime + LogicCheckRate <= milliseconds with
         | true ->
             GameServer.Master.Send (Update LogicUpdateRate)
-            |> ignore
-            _updateTime <- gameTime.TotalGameTime.TotalMilliseconds
+            _updateTime <- milliseconds
         | _ -> ()
-        base.Update gameTime    
         
+        base.Update gameTime    
+       
         // Placeholder for exiting.
+        let keyboardState = Keyboard.GetState ()
         if keyboardState.IsKeyDown Keys.Escape then
             this.Exit ()
     
@@ -68,15 +69,16 @@ type MemeFighter () as this =
     /// Draw
     ///
     override this.Draw gameTime =
-        _graphics.GraphicsDevice.Clear Color.Black
-        
         let milliseconds = gameTime.TotalGameTime.TotalMilliseconds
         
-        _spriteBatch.Begin ()
+        // Clear the screen.
+        _graphics.GraphicsDevice.Clear Color.Black
         
-        GameClient.Master.SendAndAwait<unit> (fun x -> Draw (milliseconds, _spriteBatch, x))
-         
+        // Draw a new screen.
+        _spriteBatch.Begin ()     
+        GameClient.SendAndAwait<unit> (fun x -> Draw (milliseconds, _spriteBatch, x))         
         _spriteBatch.End ()
-        //Console.WriteLine ("FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
+
+        Console.WriteLine ("FPS: {0}", (1000 / gameTime.ElapsedGameTime.Milliseconds))
         base.Draw gameTime        
         

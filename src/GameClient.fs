@@ -35,19 +35,15 @@ type ClientMessage =
     | SetEntityPosition of int * Vector2
     | Draw of float * SpriteBatch * AsyncReplyChannel<unit>
     | None   
+    
+type ClientState = { Entities: ClientEntity array }  
 
-module GameClient =
-
-    type Master = { Entities: ClientEntity array }    
+module GameClient =  
             
     let private CreateEntityState () =
-        {
-            Active = false;
-            Position = new Vector2 (0.0f, 0.0f);
-            Texture = null;
-        }
-        
-    let private LerpDuration = (1.0f / 30.0f * 1000.0f)
+        { Active = false;
+        Position = new Vector2 (0.0f, 0.0f);
+        Texture = null }
     
     let inline private SpawnEntity entity texture =
         { entity with Active = true; Texture = texture }
@@ -55,10 +51,10 @@ module GameClient =
     let inline private UpdateEntityPosition entity position =
         { entity with Position = position; }
     
-    let private CreateMasterState () =
+    let inline private CreateClientState () =
         { Entities = [|for i in 1..1024 -> CreateEntityState ()|] }      
         
-    let Master = new Process<Master, ClientMessage> (CreateMasterState (), (fun state msg ->
+    let private ClientState = new Process<ClientState, ClientMessage> (CreateClientState (), (fun state msg ->
             match msg with
             
             | EntitySpawned (id, texture) ->
@@ -85,3 +81,9 @@ module GameClient =
                 
             | _ -> state
             ))
+            
+    let Send msg =
+        ClientState.Send msg
+        
+    let SendAndAwait<'Reply> msg : 'Reply =
+        ClientState.SendAndAwait msg

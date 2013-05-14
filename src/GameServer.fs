@@ -63,7 +63,7 @@ module GameServer =
                 let entities = Array.filter (fun x -> x.Active = true) state.Entities
                 Array.iter (fun (x : Entity) -> 
                     let position = new Vector2(ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.X), ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.Y))
-                    GameClient.Master.Send (SetEntityPosition (0, position))
+                    GameClient.Send (SetEntityPosition (0, position))
                 ) entities
                 state
                 
