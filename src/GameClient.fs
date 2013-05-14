@@ -17,18 +17,29 @@ open FarseerPhysics
 open FarseerPhysics.Collision
 open FarseerPhysics.Controllers
 
-type LerpVector2 =
-    { X1: float32;
-    Y1: float32;
-    X2: float32;
-    Y2: float32;
-    Lerp: Vector2;
-    Time: float; }
 
+[<CustomEquality>]
+[<CustomComparison>]
 type ClientEntity =
-    { Active: bool;
-    Position: Vector2;
-    Texture: Texture2D; }
+    {
+        Id: int;
+        Position: Vector2;
+        Texture: Texture2D;
+    }
+    
+    override this.Equals x =
+        match x with
+        | :? ClientEntity as entity -> this.Id = entity.Id
+        | _ -> false
+        
+    override this.GetHashCode () = hash this.Id
+    
+    interface IComparable with
+        member this.CompareTo x = 
+            match x with
+            | :? ClientEntity as entity -> compare this.Id entity.Id
+            | _ -> invalidArg "x" "Invalid comparison"  
+    
 
 type ClientMessage =
     | EntitySpawned of int * Texture2D
@@ -36,45 +47,39 @@ type ClientMessage =
     | Draw of float * SpriteBatch * AsyncReplyChannel<unit>
     | None   
     
-type ClientState = { Entities: ClientEntity array }  
+type ClientState = { Entities: Set<ClientEntity> }  
 
-module GameClient =              
-    let private CreateEntityState () =
-        { Active = false;
-        Position = new Vector2 (0.0f, 0.0f);
-        Texture = null }
-    
-    let inline private SpawnEntity entity texture =
-        { entity with Active = true; Texture = texture }
+module GameClient =                  
+    let inline private SpawnEntity id x y texture =
+        {
+            Id = id;
+            Position = new Vector2 (x, y);
+            Texture = texture;
+        }
 
     let inline private UpdateEntityPosition entity position =
         { entity with Position = position; }
     
     let inline private CreateClientState () =
-        { Entities = [|for i in 1..1024 -> CreateEntityState ()|] }      
+        { Entities = Set.empty }              
         
     let private ClientState = new Process<ClientState, ClientMessage> (CreateClientState (), (fun state msg ->
             match msg with
             
-            | EntitySpawned (id, texture) ->
-                let entity = state.Entities.[id]                  
-                state.Entities.[id] <- SpawnEntity entity texture                
-                state
+            | EntitySpawned (id, texture) ->              
+                { Entities = Set.add (SpawnEntity id 0.0f 0.0f texture) state.Entities }              
                 
             | SetEntityPosition (id, position) ->
-                let entity = state.Entities.[id]                
-                state.Entities.[id] <- UpdateEntityPosition entity position             
-                state
+                let entity = state.Entities.FirstOrDefault (fun x -> x.Id = id)
+                match entity = Unchecked.defaultof<_> with
+                | false -> { Entities = Set.remove entity state.Entities |> Set.add (UpdateEntityPosition entity position) }   
+                | _ -> state           
                 
-            | Draw (milliseconds, spriteBatch, channel) ->                
-                Array.iter (fun x ->
-                    match x.Active with
-                    | false -> ()
-                    | _ ->
-                     
+            | Draw (milliseconds, spriteBatch, channel) ->
+                Set.iter (fun x ->
                     spriteBatch.Draw (x.Texture, x.Position, Color.White)
                 ) state.Entities
-                
+                           
                 channel.Reply ()
                 state                
                 
