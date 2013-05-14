@@ -37,8 +37,9 @@ type MemeFighter () as this =
     override this.Initialize () =
         GameServer.Init ()
         GameClient.Init ()
-        let texture = this.Content.Load<Texture2D>("nyan")
-        GameServer.Send (SpawnEntity (texture))
+        let texture = new Texture2D (_graphics.GraphicsDevice, 16, 16)
+        for i = 0 to 75 do
+            GameServer.Send (SpawnEntity (texture))
         base.Initialize ()        
     
     ///

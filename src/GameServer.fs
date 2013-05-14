@@ -53,8 +53,10 @@ module GameServer =
     ///
     let inline private CreateDynamicFixture world =
         let body = BodyFactory.CreateBody (world, new Vector2(0.0f, 0.0f))
-        let shape = new Shapes.CircleShape (0.5f, 0.5f)
-        let fixture = body.CreateFixture (shape, 5)
+        let width = ConvertUnits.ToSimUnits(16)
+        let height = ConvertUnits.ToSimUnits(16)
+        let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(width, height), 1.0f)
+        let fixture = body.CreateFixture shape
         
         fixture.Restitution <- 1.0f
         fixture.Body.BodyType <- BodyType.Dynamic
@@ -110,7 +112,7 @@ module GameServer =
                 state
                 
             | _ -> state
-            ))    
+    ))    
 
     ///
     ///

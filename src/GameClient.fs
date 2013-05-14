@@ -77,7 +77,7 @@ module GameClient =
                 
             | Draw (milliseconds, spriteBatch, channel) ->
                 Set.iter (fun x ->
-                    spriteBatch.Draw (x.Texture, x.Position, Color.White)
+                    spriteBatch.Draw (x.Texture, x.Position, Color.Yellow)
                 ) state.Entities
                            
                 channel.Reply ()
