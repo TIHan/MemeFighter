@@ -28,12 +28,10 @@ type MemeFighter () as this =
         
     do
         _graphics <- new GraphicsDeviceManager (this)
-        this.Content.RootDirectory <- "Content"
         _graphics.IsFullScreen <- false
         _graphics.SynchronizeWithVerticalRetrace <- false
         this.TargetElapsedTime <- TimeSpan.FromSeconds (1.0 / DrawRate)
-        _graphics.PreferredBackBufferWidth <- 640
-        _graphics.PreferredBackBufferHeight <- 960
+        this.Content.RootDirectory <- "Content"
   
     
     ///

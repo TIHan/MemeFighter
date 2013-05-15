@@ -1,12 +1,9 @@
 /*
-* Farseer Physics Engine based on Box2D.XNA port:
-* Copyright (c) 2010 Ian Qvist
+* Farseer Physics Engine:
+* Copyright (c) 2012 Ian Qvist
 * 
-* Box2D.XNA port of Box2D:
-* Copyright (c) 2009 Brandon Furtwangler, Nathan Furtwangler
-*
 * Original source Box2D:
-* Copyright (c) 2006-2009 Erin Catto http://www.gphysics.com 
+* Copyright (c) 2006-2011 Erin Catto http://www.box2d.org 
 * 
 * This software is provided 'as-is', without any express or implied 
 * warranty.  In no event will the authors be held liable for any damages 
@@ -31,17 +28,22 @@ namespace FarseerPhysics.Dynamics.Joints
 {
     public enum JointType
     {
+        Unknown,
         Revolute,
         Prismatic,
         Distance,
         Pulley,
+        //Mouse, <- We have fixed mouse
         Gear,
-        Line,
+        Wheel,
         Weld,
         Friction,
+        Rope,
+        Motor,
+
+        //FPE note: From here on and down, it is only FPE joints
         Slider,
         Angle,
-        Rope,
         FixedMouse,
         FixedRevolute,
         FixedDistance,
@@ -59,32 +61,17 @@ namespace FarseerPhysics.Dynamics.Joints
         Equal,
     }
 
-    internal struct Jacobian
+    internal struct Jacobian //TODO
     {
         public float AngularA;
         public float AngularB;
-        public Vector2 LinearA;
-        public Vector2 LinearB;
+        public Vector2 Linear;
 
         public void SetZero()
         {
-            LinearA = Vector2.Zero;
             AngularA = 0.0f;
-            LinearB = Vector2.Zero;
+            Linear = Vector2.Zero;
             AngularB = 0.0f;
-        }
-
-        public void Set(Vector2 x1, float a1, Vector2 x2, float a2)
-        {
-            LinearA = x1;
-            AngularA = a1;
-            LinearB = x2;
-            AngularB = a2;
-        }
-
-        public float Compute(Vector2 x1, float a1, Vector2 x2, float a2)
-        {
-            return Vector2.Dot(LinearA, x1) + AngularA * a1 + Vector2.Dot(LinearB, x2) + AngularB * a2;
         }
     }
 
@@ -125,16 +112,11 @@ namespace FarseerPhysics.Dynamics.Joints
         /// The default value is float.MaxValue
         /// </summary>
         public float Breakpoint = float.MaxValue;
+        public bool Enabled = true;
 
         internal JointEdge EdgeA = new JointEdge();
         internal JointEdge EdgeB = new JointEdge();
-        public bool Enabled = true;
-        protected float InvIA;
-        protected float InvIB;
-        protected float InvMassA;
-        protected float InvMassB;
         internal bool IslandFlag;
-        protected Vector2 LocalCenterA, LocalCenterB;
 
         protected Joint()
         {
@@ -181,13 +163,13 @@ namespace FarseerPhysics.Dynamics.Joints
         public Body BodyB { get; set; }
 
         /// <summary>
-        /// Get the anchor point on body1 in world coordinates.
+        /// Get the anchor point on bodyA in world coordinates.
         /// </summary>
         /// <value></value>
         public abstract Vector2 WorldAnchorA { get; }
 
         /// <summary>
-        /// Get the anchor point on body2 in world coordinates.
+        /// Get the anchor point on bodyB in world coordinates.
         /// </summary>
         /// <value></value>
         public abstract Vector2 WorldAnchorB { get; set; }
@@ -197,15 +179,6 @@ namespace FarseerPhysics.Dynamics.Joints
         /// </summary>
         /// <value>The data.</value>
         public object UserData { get; set; }
-
-        /// <summary>
-        /// Short-cut function to determine if either body is inactive.
-        /// </summary>
-        /// <value><c>true</c> if active; otherwise, <c>false</c>.</value>
-        public bool Active
-        {
-            get { return BodyA.Enabled && BodyB.Enabled; }
-        }
 
         /// <summary>
         /// Set this flag to true if the attached bodies should collide.
@@ -218,26 +191,26 @@ namespace FarseerPhysics.Dynamics.Joints
         public event Action<Joint, float> Broke;
 
         /// <summary>
-        /// Get the reaction force on body2 at the joint anchor in Newtons.
+        /// Get the reaction force on bodyB at the joint anchor in Newtons.
         /// </summary>
-        /// <param name="inv_dt">The inv_dt.</param>
+        /// <param name="invDt">The inv_dt.</param>
         /// <returns></returns>
-        public abstract Vector2 GetReactionForce(float inv_dt);
+        public abstract Vector2 GetReactionForce(float invDt);
 
         /// <summary>
-        /// Get the reaction torque on body2 in N*m.
+        /// Get the reaction torque on bodyB in N*m.
         /// </summary>
-        /// <param name="inv_dt">The inv_dt.</param>
+        /// <param name="invDt">The inv_dt.</param>
         /// <returns></returns>
-        public abstract float GetReactionTorque(float inv_dt);
+        public abstract float GetReactionTorque(float invDt);
 
         protected void WakeBodies()
         {
-            BodyA.Awake = true;
+            //if (BodyA != null)
+                //BodyA.Awake = true;
+
             if (BodyB != null)
-            {
                 BodyB.Awake = true;
-            }
         }
 
         /// <summary>
@@ -254,7 +227,7 @@ namespace FarseerPhysics.Dynamics.Joints
                    JointType == JointType.FixedFriction;
         }
 
-        internal abstract void InitVelocityConstraints(ref TimeStep step);
+        internal abstract void InitVelocityConstraints(ref SolverData data);
 
         internal void Validate(float invDT)
         {
@@ -271,12 +244,13 @@ namespace FarseerPhysics.Dynamics.Joints
                 Broke(this, jointError);
         }
 
-        internal abstract void SolveVelocityConstraints(ref TimeStep step);
+        internal abstract void SolveVelocityConstraints(ref SolverData data);
 
         /// <summary>
         /// Solves the position constraints.
         /// </summary>
+        /// <param name="data"></param>
         /// <returns>returns true if the position errors are within tolerance.</returns>
-        internal abstract bool SolvePositionConstraints();
+        internal abstract bool SolvePositionConstraints(ref SolverData data);
     }
 }

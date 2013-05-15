@@ -52,8 +52,8 @@ module GameServer =
     ///
     ///
     let inline private CreateDynamicFixture world x y =
-        let body = BodyFactory.CreateBody (world, new Vector2(x, y))
-        body.SleepingAllowed <- true
+        let position = Nullable<Vector2> (new Vector2(x, y))
+        let body = new Body (world, position)
         let width = ConvertUnits.ToSimUnits(8)
         let height = ConvertUnits.ToSimUnits(8)
         let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(width, height), 1.0f)

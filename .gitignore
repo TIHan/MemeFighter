@@ -112,4 +112,5 @@ MassTransit.log*
 
 # Mono .userprefs
 *.userprefs
+.sln~
 
