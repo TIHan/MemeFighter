@@ -83,7 +83,7 @@ module GameServer =
     ///
     ///
     ///        
-    let mutable private CanSpawnFloor = true     
+    let mutable private CanSpawnFloor = true   
        
     ///
     ///
