@@ -25,6 +25,8 @@ type ClientEntity =
         Id: int;
         Position: Vector2;
         Rotation: float32;
+        LerpPosition: Vector2;
+        LerpRotation: float32;
         Texture: Texture2D;
     }
     
@@ -57,6 +59,8 @@ module GameClient =
             Id = id;
             Position = new Vector2 (x, y);
             Rotation = 0.0f;
+            LerpPosition = new Vector2 (x, y);
+            LerpRotation = 0.0f;
             Texture = texture;
         }
 

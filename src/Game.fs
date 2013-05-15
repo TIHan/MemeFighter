@@ -39,7 +39,6 @@ type MemeFighter () as this =
     override this.Initialize () =
         GameClient.Init ()
         GameServer.Init ()
-        //let texture = this.Content.Load<Texture2D> ("yellow_block_16x16")
         _textureBlock <- this.Content.Load<Texture2D> ("yellow_block_16x16")
             
         base.Initialize ()        
