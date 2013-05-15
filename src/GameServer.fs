@@ -53,13 +53,16 @@ module GameServer =
     ///
     let inline private CreateDynamicFixture world x y =
         let body = BodyFactory.CreateBody (world, new Vector2(x, y))
-        let width = ConvertUnits.ToSimUnits(16)
-        let height = ConvertUnits.ToSimUnits(16)
-        let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(width, height), 0.0f)
+        body.SleepingAllowed <- true
+        let width = ConvertUnits.ToSimUnits(8)
+        let height = ConvertUnits.ToSimUnits(8)
+        let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(width, height), 1.0f)
         let fixture = body.CreateFixture shape
         
-        fixture.Restitution <- 0.90f
+        fixture.Restitution <- 0.00f
         fixture.Body.BodyType <- BodyType.Dynamic
+        fixture.Body.Mass <- 1.0f
+        fixture.Body.SleepingAllowed <- true
         fixture        
 
     ///
@@ -88,7 +91,7 @@ module GameServer =
     let private ServerState = new Process<ServerState, ServerMessage> (CreateServerState (), (fun state msg ->
             match CanSpawnFloor with
             | true ->
-                let body = BodyFactory.CreateBody (state.World, new Vector2 (0.0f, 20.0f))
+                let body = BodyFactory.CreateBody (state.World, new Vector2 (0.0f, 30.0f))
                 let shape = new Shapes.PolygonShape (PolygonTools.CreateRectangle(1000.0f, 4.0f), 0.0f)
                 let fixture = body.CreateFixture shape
                 CanSpawnFloor <- false
@@ -98,14 +101,15 @@ module GameServer =
             
             | SpawnEntity (content, x, y) ->   
                 let entity = SpawnEntity state x y
-                GameClient.Send (EntitySpawned (entity.Id, content, x, y))
+                GameClient.Send (EntitySpawned (entity.Id, content, ConvertUnits.ToDisplayUnits (x), ConvertUnits.ToDisplayUnits (y)))
                 { state with Entities = Set.add entity state.Entities; NextEntityId = state.NextEntityId + 1 }
                 
             | Update timeStep ->
                 state.World.Step timeStep
                 Set.iter (fun x -> 
-                    let position = new Vector2(ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.X), ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.Y))
-                    GameClient.Send (SetEntityPosition (x.Id, position))
+                    let position = new Vector2 (ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.X), ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.Y))
+                    let rotation = x.Fixture.Body.Rotation
+                    GameClient.Send (SetEntityPosition (x.Id, position, rotation))
                 ) state.Entities
                 state
                 

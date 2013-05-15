@@ -47,16 +47,16 @@
       <HintPath>..\lib\FSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="Lidgren.Network">
-      <HintPath>..\lib\Linux\Lidgren.Network.dll</HintPath>
+      <HintPath>..\lib\WindowsGL\Lidgren.Network.dll</HintPath>
     </Reference>
     <Reference Include="MonoGame.Framework">
-      <HintPath>..\lib\Linux\MonoGame.Framework.dll</HintPath>
+      <HintPath>..\lib\WindowsGL\MonoGame.Framework.dll</HintPath>
     </Reference>
     <Reference Include="OpenTK">
-      <HintPath>..\lib\Linux\OpenTK.dll</HintPath>
+      <HintPath>..\lib\WindowsGL\OpenTK.dll</HintPath>
     </Reference>
     <Reference Include="Tao.Sdl">
-      <HintPath>..\lib\Linux\Tao.Sdl.dll</HintPath>
+      <HintPath>..\lib\WindowsGL\Tao.Sdl.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" />
@@ -76,6 +76,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\nyan_song.mp3">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\yellow_block_16x16.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

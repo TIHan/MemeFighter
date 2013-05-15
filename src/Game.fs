@@ -10,6 +10,7 @@ open Microsoft.Xna.Framework.Storage
 open Microsoft.Xna.Framework.Input
 open Microsoft.Xna.Framework.Audio
 open Microsoft.Xna.Framework.Media
+open FarseerPhysics
         
 
 type MemeFighter () as this =
@@ -23,6 +24,7 @@ type MemeFighter () as this =
     let mutable _spriteBatch : SpriteBatch = null
     let mutable _graphics : GraphicsDeviceManager = null
     let mutable _updateTime = 0.0
+    let mutable _textureBlock : Texture2D = null
         
     do
         _graphics <- new GraphicsDeviceManager (this)
@@ -37,11 +39,8 @@ type MemeFighter () as this =
     override this.Initialize () =
         GameClient.Init ()
         GameServer.Init ()
-        let texture = new Texture2D (_graphics.GraphicsDevice, 16, 16)
-
-            
-        for i = 0 to 255 do
-            GameServer.Send (SpawnEntity (texture, float32 i, 0.0f))
+        //let texture = this.Content.Load<Texture2D> ("yellow_block_16x16")
+        _textureBlock <- this.Content.Load<Texture2D> ("yellow_block_16x16")
             
         base.Initialize ()        
     
@@ -61,6 +60,7 @@ type MemeFighter () as this =
         | true ->
             GameServer.Send (Update LogicUpdateRate)
             _updateTime <- milliseconds
+            //GameServer.Send (SpawnEntity (_textureBlock, 20.0f, 2.0f))
         | _ -> ()
         
         base.Update gameTime    
@@ -69,6 +69,10 @@ type MemeFighter () as this =
         let keyboardState = Keyboard.GetState ()
         if keyboardState.IsKeyDown Keys.Escape then
             this.Exit ()
+            
+        let mouseState = Mouse.GetState ()
+        if mouseState.LeftButton = ButtonState.Pressed then
+            GameServer.Send (SpawnEntity (_textureBlock, ConvertUnits.ToSimUnits(mouseState.X), ConvertUnits.ToSimUnits(mouseState.Y)))
     
     ///
     /// Draw

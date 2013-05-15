@@ -24,6 +24,7 @@ type ClientEntity =
     {
         Id: int;
         Position: Vector2;
+        Rotation: float32;
         Texture: Texture2D;
     }
     
@@ -44,7 +45,7 @@ type ClientEntity =
 type ClientMessage =
     | EntitySpawned of int * Texture2D * float32 * float32
     | EntityPositionsUpdated of (int * int * int) list
-    | SetEntityPosition of int * Vector2
+    | SetEntityPosition of int * Vector2 * float32
     | Draw of float * SpriteBatch * AsyncReplyChannel<unit>
     | None   
     
@@ -55,11 +56,12 @@ module GameClient =
         {
             Id = id;
             Position = new Vector2 (x, y);
+            Rotation = 0.0f;
             Texture = texture;
         }
 
-    let inline private UpdateEntityPosition entity position =
-        { entity with Position = position; }
+    let inline private UpdateEntityPosition entity position rotation =
+        { entity with Position = position; Rotation = rotation }
     
     let inline private CreateClientState () =
         { Entities = Set.empty }                               
@@ -70,15 +72,17 @@ module GameClient =
             | EntitySpawned (id, texture, x, y) ->              
                 { Entities = Set.add (SpawnEntity id x y texture) state.Entities }
                 
-            | SetEntityPosition (id, position) ->
+            | SetEntityPosition (id, position, rotation) ->
                 let entity = Set.filter (fun x -> x.Id = id) state.Entities |> Set.minElement
                 match entity = Unchecked.defaultof<_> with
-                | false -> { Entities = Set.remove entity state.Entities |> Set.add (UpdateEntityPosition entity position) }   
+                | false -> { Entities = Set.remove entity state.Entities |> Set.add (UpdateEntityPosition entity position rotation) }   
                 | _ -> state         
                 
             | Draw (milliseconds, spriteBatch, channel) ->
                 Set.iter (fun x ->
-                    spriteBatch.Draw (x.Texture, x.Position, Color.Yellow)
+                    let origin = new Vector2 (8.0f, 8.0f)
+                    let scale = new Vector2 (1.0f, 1.0f)
+                    spriteBatch.Draw (x.Texture, x.Position, Nullable (), Color.White, x.Rotation, origin, scale, SpriteEffects.None, 0.0f)
                 ) state.Entities
                            
                 channel.Reply ()
