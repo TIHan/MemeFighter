@@ -88,7 +88,7 @@ module GameServer =
     ///
     ///
     /// 
-    let private ServerState = new Process<ServerState, ServerMessage> (CreateServerState (), (fun state msg ->
+    let private ServerState = new Process<ServerState, ServerMessage> (CreateServerState (), fun state msg ->
             match CanSpawnFloor with
             | true ->
                 let body = BodyFactory.CreateBody (state.World, new Vector2 (0.0f, 30.0f))
@@ -101,7 +101,7 @@ module GameServer =
             
             | SpawnEntity (content, x, y) ->   
                 let entity = SpawnEntity state x y
-                GameClient.Send (EntitySpawned (entity.Id, content, ConvertUnits.ToDisplayUnits (x), ConvertUnits.ToDisplayUnits (y)))
+                EventService.Throw (EntitySpawned (entity.Id, content, ConvertUnits.ToDisplayUnits (x), ConvertUnits.ToDisplayUnits (y)))
                 { state with Entities = Set.add entity state.Entities; NextEntityId = state.NextEntityId + 1 }
                 
             | Update timeStep ->
@@ -109,12 +109,12 @@ module GameServer =
                 Set.iter (fun x -> 
                     let position = new Vector2 (ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.X), ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.Y))
                     let rotation = x.Fixture.Body.Rotation
-                    GameClient.Send (SetEntityPosition (x.Id, position, rotation))
+                    EventService.Throw (SetEntityPosition (x.Id, position, rotation))
                 ) state.Entities
                 state
                 
             | _ -> state
-    ))    
+    )    
 
     ///
     ///

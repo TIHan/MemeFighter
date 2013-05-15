@@ -17,3 +17,6 @@ type Process<'State, 'Msg> (initial: 'State, execute) =
     
     member this.SendAndAwait<'Reply> msg : 'Reply =
         mailbox.PostAndReply msg
+        
+    member this.TrySendAndAwait<'Reply> msg timeout : Option<'Reply> =
+        mailbox.TryPostAndReply (msg, timeout)

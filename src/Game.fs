@@ -37,6 +37,7 @@ type MemeFighter () as this =
     /// Initialize
     ///
     override this.Initialize () =
+        EventService.Init ()
         GameClient.Init ()
         GameServer.Init ()
         _textureBlock <- this.Content.Load<Texture2D> ("yellow_block_16x16")
@@ -54,16 +55,7 @@ type MemeFighter () as this =
     ///   
     override this.Update gameTime =       
         let milliseconds = gameTime.TotalGameTime.TotalMilliseconds
-
-        match _updateTime + LogicCheckRate <= milliseconds with
-        | true ->
-            GameServer.Send (Update LogicUpdateRate)
-            _updateTime <- milliseconds
-            //GameServer.Send (SpawnEntity (_textureBlock, 20.0f, 2.0f))
-        | _ -> ()
         
-        base.Update gameTime    
-       
         // Placeholder for exiting.
         let keyboardState = Keyboard.GetState ()
         if keyboardState.IsKeyDown Keys.Escape then
@@ -72,6 +64,14 @@ type MemeFighter () as this =
         let mouseState = Mouse.GetState ()
         if mouseState.LeftButton = ButtonState.Pressed then
             GameServer.Send (SpawnEntity (_textureBlock, ConvertUnits.ToSimUnits(mouseState.X), ConvertUnits.ToSimUnits(mouseState.Y)))
+
+        match _updateTime + LogicCheckRate <= milliseconds with
+        | true ->
+            GameServer.Send (Update LogicUpdateRate)
+            _updateTime <- milliseconds
+        | _ -> ()
+        
+        base.Update gameTime    
     
     ///
     /// Draw

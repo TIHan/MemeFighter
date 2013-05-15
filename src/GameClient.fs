@@ -70,7 +70,7 @@ module GameClient =
     let inline private CreateClientState () =
         { Entities = Set.empty }                               
         
-    let private ClientState = new Process<ClientState, ClientMessage> (CreateClientState (), (fun state msg ->
+    let private ClientState = new Process<ClientState, ClientMessage> (CreateClientState (), fun state msg ->
             match msg with
             
             | EntitySpawned (id, texture, x, y) ->              
@@ -93,7 +93,7 @@ module GameClient =
                 state                
                 
             | _ -> state
-            ))
+    )
             
     let Init () =
         ConvertUnits.SetDisplayUnitToSimUnitRatio(16.0f)

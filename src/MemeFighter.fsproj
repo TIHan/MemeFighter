@@ -13,6 +13,7 @@
       <BuildOrder>
         <String>Process.fs</String>
         <String>GameClient.fs</String>
+        <String>EventService.fs</String>
         <String>GameServer.fs</String>
         <String>Game.fs</String>
         <String>Program.fs</String>
@@ -43,20 +44,20 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="FSharp.Core">
-      <HintPath>..\lib\FSharp.Core.dll</HintPath>
-    </Reference>
     <Reference Include="Lidgren.Network">
       <HintPath>..\lib\WindowsGL\Lidgren.Network.dll</HintPath>
     </Reference>
     <Reference Include="MonoGame.Framework">
       <HintPath>..\lib\WindowsGL\MonoGame.Framework.dll</HintPath>
     </Reference>
-    <Reference Include="OpenTK">
-      <HintPath>..\lib\WindowsGL\OpenTK.dll</HintPath>
-    </Reference>
     <Reference Include="Tao.Sdl">
       <HintPath>..\lib\WindowsGL\Tao.Sdl.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharp.Core">
+      <HintPath>..\..\MonoWebFSharp\lib\FSharp.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK">
+      <HintPath>..\lib\OpenTK.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" />
@@ -66,6 +67,7 @@
     <Compile Include="GameServer.fs" />
     <Compile Include="Process.fs" />
     <Compile Include="GameClient.fs" />
+    <Compile Include="EventService.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Icon.png" />
