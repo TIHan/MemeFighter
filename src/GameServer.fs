@@ -109,7 +109,7 @@ module GameServer =
                 Set.iter (fun x -> 
                     let position = new Vector2 (ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.X), ConvertUnits.ToDisplayUnits (x.Fixture.Body.Position.Y))
                     let rotation = x.Fixture.Body.Rotation
-                    EventService.Throw (SetEntityPosition (x.Id, position, rotation))
+                    EventService.Throw (SetEntityPosition (x.Id, position.X, position.Y, rotation))
                 ) state.Entities
                 state
                 

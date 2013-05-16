@@ -47,7 +47,7 @@ type ClientEntity =
 type ClientMessage =
     | EntitySpawned of int * Texture2D * float32 * float32
     | EntityPositionsUpdated of (int * int * int) list
-    | SetEntityPosition of int * Vector2 * float32
+    | SetEntityPosition of int * float32 * float32 * float32
     | Draw of float * SpriteBatch * AsyncReplyChannel<unit>
     | None   
     
@@ -64,8 +64,8 @@ module GameClient =
             Texture = texture;
         }
 
-    let inline private UpdateEntityPosition entity position rotation =
-        { entity with Position = position; Rotation = rotation }
+    let inline private UpdateEntityPosition entity x y rotation =
+        { entity with Position = new Vector2 (x, y); Rotation = rotation }
     
     let inline private CreateClientState () =
         { Entities = Set.empty }                               
@@ -76,10 +76,10 @@ module GameClient =
             | EntitySpawned (id, texture, x, y) ->              
                 { Entities = Set.add (SpawnEntity id x y texture) state.Entities }
                 
-            | SetEntityPosition (id, position, rotation) ->
+            | SetEntityPosition (id, x, y, rotation) ->
                 let entity = Set.filter (fun x -> x.Id = id) state.Entities |> Set.minElement
                 match entity = Unchecked.defaultof<_> with
-                | false -> { Entities = Set.remove entity state.Entities |> Set.add (UpdateEntityPosition entity position rotation) }   
+                | false -> { Entities = Set.remove entity state.Entities |> Set.add (UpdateEntityPosition entity x y rotation) }   
                 | _ -> state         
                 
             | Draw (milliseconds, spriteBatch, channel) ->
